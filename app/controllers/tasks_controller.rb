@@ -7,7 +7,9 @@ class TasksController < ApplicationController
   end
 
   def create
-    @result = Task.create(task_params)
+    service = Tasks::CreateService.new(create_params)
+    service.call
+    @result = service.task
     tasks_all
   end
 
@@ -27,6 +29,10 @@ class TasksController < ApplicationController
   end
 
   private
+
+  def create_params
+    params.permit(:name, :explanation, :status, :priority, :genreId, :deadlineDate)
+  end
 
   def task_params
     permitted = params.permit(:name, :explanation, :status, :priority)
