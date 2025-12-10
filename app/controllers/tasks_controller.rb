@@ -28,6 +28,16 @@ class TasksController < ApplicationController
     tasks_all
   end
 
+  def duplicate
+    service = Tasks::DuplicateService.new(params[:id])
+
+    if service.call
+      tasks_all
+    else
+      render json: { error: 'Task not found' }, status: :not_found
+    end
+  end
+
   private
 
   def create_params
