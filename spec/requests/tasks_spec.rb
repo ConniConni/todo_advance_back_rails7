@@ -265,4 +265,81 @@ RSpec.describe 'Tasks API', type: :request do
       end
     end
   end
+
+  describe 'GET /tasks/stats' do
+    context 'タスクが存在する場合' do
+      before do
+        # status: 0 - 2件
+        Task.create!(name: 'タスク1', genre: genre, status: 0, priority: :low)
+        Task.create!(name: 'タスク2', genre: genre, status: 0, priority: :medium)
+
+        # status: 1 - 1件
+        Task.create!(name: 'タスク3', genre: genre, status: 1, priority: :high)
+
+        # status: 5 (完了) - 2件
+        Task.create!(name: 'タスク4', genre: genre, status: 5, priority: :medium)
+        Task.create!(name: 'タスク5', genre: genre, status: 5, priority: :high)
+      end
+
+      it 'ステータスコード200が返されること' do
+        get '/tasks/stats'
+        expect(response).to have_http_status(:success)
+      end
+
+      it 'レスポンスにtotalCountが含まれること' do
+        get '/tasks/stats'
+
+        json_response = JSON.parse(response.body)
+        expect(json_response).to have_key('totalCount')
+        expect(json_response['totalCount']).to eq(5)
+      end
+
+      it 'レスポンスにstatusCountsが含まれること' do
+        get '/tasks/stats'
+
+        json_response = JSON.parse(response.body)
+        expect(json_response).to have_key('statusCounts')
+        expect(json_response['statusCounts']).to be_a(Hash)
+        expect(json_response['statusCounts']['0']).to eq(2)
+        expect(json_response['statusCounts']['1']).to eq(1)
+        expect(json_response['statusCounts']['5']).to eq(2)
+      end
+
+      it 'レスポンスにcompletionRateが含まれること' do
+        get '/tasks/stats'
+
+        json_response = JSON.parse(response.body)
+        expect(json_response).to have_key('completionRate')
+        expect(json_response['completionRate']).to be_within(0.01).of(40.0)
+      end
+    end
+
+    context 'タスクが0件の場合' do
+      it 'ステータスコード200が返されること' do
+        get '/tasks/stats'
+        expect(response).to have_http_status(:success)
+      end
+
+      it 'totalCountが0であること' do
+        get '/tasks/stats'
+
+        json_response = JSON.parse(response.body)
+        expect(json_response['totalCount']).to eq(0)
+      end
+
+      it 'statusCountsが空のオブジェクトであること' do
+        get '/tasks/stats'
+
+        json_response = JSON.parse(response.body)
+        expect(json_response['statusCounts']).to eq({})
+      end
+
+      it 'completionRateが0.0であること' do
+        get '/tasks/stats'
+
+        json_response = JSON.parse(response.body)
+        expect(json_response['completionRate']).to eq(0.0)
+      end
+    end
+  end
 end
