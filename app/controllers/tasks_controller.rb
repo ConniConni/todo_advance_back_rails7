@@ -45,6 +45,13 @@ class TasksController < ApplicationController
     render :stats
   end
 
+  def report
+    service = Tasks::ReportService.new
+    service.call
+    @report = service.result
+    render :report
+  end
+
   private
 
   def create_params
